@@ -21,8 +21,8 @@ variable "ec2" {
     instance_type = string
   })
   default = {
-    // Ubuntu 20.04 LTS
-    ami           = "ami-0c55b159cbfafe1f0"
+    // Ubuntu 24.04 LTS(hvm:ssd) (x64 (x86))
+    ami           = "ami-0e2c8caa4b6378d8c"
     instance_type = "t2.micro"
   }
 }
