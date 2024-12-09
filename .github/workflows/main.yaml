@@ -74,10 +74,16 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Decode and use private key from secrets
         run: |
           echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
+
+      - name: Verify inventory file
+        run: cat inventory.ini
       
       - name: Run Ansible Playbook 
         run: |
