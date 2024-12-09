@@ -1,0 +1,85 @@
+---
+- name: Configure EC2 instance
+  hosts: all
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install required packages
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to Docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Check current Docker image version
+      command: docker images nginx --format "{{.Tag}}"
+      register: current_docker_version
+      ignore_errors: yes
+
+    - name: Pull latest Docker image
+      docker_image:
+        name: nginx
+        source: pull
+      register: new_docker_image
+
+    - name: Compare Docker image versions
+      set_fact:
+        docker_version_changed: "{{ current_docker_version.stdout != new_docker_image.image.Tag }}"
+
+    - name: Stop Docker container if image version changed
+      docker_container:
+        name: nginx
+        state: stopped
+      when: docker_version_changed
+
+    - name: Remove Docker container if image version changed
+      docker_container:
+        name: nginx
+        state: absent
+      when: docker_version_changed
+
+    - name: Run Docker container with new image
+      docker_container:
+        name: nginx
+        image: nginx
+        state: started
+        ports:
+          - "80:80"
+      when: docker_version_changed

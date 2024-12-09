@@ -1,0 +1,75 @@
+name: Terraform and Ansible Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-1
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply(Refresh Only)
+        id: apply
+        run: terraform apply -refresh-only -auto-approve
+
+      - name: Save instance IP to file
+        run: |
+          echo $(terraform output -raw instance_ip) > instance_ip.txt
+
+      - name: Upload instance IP to S3
+        run: |
+          aws s3 cp instance_ip.txt s3://anastacio/instance_ip.txt
+
+  ansible:
+    runs-on: ubuntu-latest
+    needs: terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-1
+
+      - name: Download instance IP from S3
+        run: |
+          aws s3 cp s3://anastacio/instance_ip.txt instance_ip.txt
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      - name: Use private key from secrets
+        run: |
+          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i instance_ip.txt, playbook.yml --private-key private_key.pem
