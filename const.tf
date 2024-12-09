@@ -22,7 +22,7 @@ variable "ec2" {
   })
   default = {
     // Ubuntu 24.04 LTS(hvm:ssd) (x64 (x86))
-    ami           = "ami-0e2c8caa4b6378d8c"
+    ami           = "ami-0657605d763ac72a8" //us-west-1
     instance_type = "t2.micro"
   }
 }
