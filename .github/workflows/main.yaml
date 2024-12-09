@@ -38,7 +38,12 @@ jobs:
       - name: Create Ansible Inventory File
         id: inventory
         run: |
-          echo "api ansible_host=$(terraform output -raw instance_ip) ansible_connection=ssh ansible_port=22 ansible_user=ubuntu ansible_ssh_private_key_file=private_key.pem" >> inventory.ini
+          instance_ip=$(terraform output -raw instance_ip)
+          echo "[api]" > inventory.ini
+          echo "${instance_ip} ansible_host=${instance_ip} ansible_connection=ssh ansible_port=22 ansible_user=ubuntu ansible_ssh_private_key_file=private_key.pem" >> inventory.ini
+          echo "" >> inventory.ini
+          echo "[api:vars]" >> inventory.ini
+          echo "ansible_python_interpreter=/usr/bin/python3" >> inventory.ini
 
       - name: Upload Ansible inventory to S3
         run: |
