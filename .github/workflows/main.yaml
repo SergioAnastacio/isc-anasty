@@ -33,7 +33,7 @@ jobs:
 
       - name: Terraform Apply(Refresh Only)
         id: apply
-        run: terraform apply -refresh-only -auto-approve
+        run: terraform apply -auto-approve
 
       - name: Create Ansible Inventory File
         id: inventory
@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload Ansible inventory to S3
         run: |
-          aws s3 cp instance_ip.txt s3://anastacio/inventory.ini
+          aws s3 cp inventory.ini s3://anastacio/inventory.ini
 
   ansible:
     runs-on: ubuntu-latest
