@@ -62,3 +62,8 @@ output "instance_ip" {
   value = aws_eip.back_anasty_eip.public_ip
   sensitive = false
 }
+
+resource "local_file" "instance_ip_file" {
+  content  = aws_eip.back_anasty_eip.public_ip
+  filename = "${path.module}/instance_ip.txt"
+}

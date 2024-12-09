@@ -44,7 +44,7 @@ jobs:
       - name: Create Ansible Inventory File
         id: inventory
         run: |
-          instance_ip=$(terraform output -raw instance_ip)
+          instance_ip=$(cat instance_ip.txt)
           echo "[api]" > inventory.ini
           echo "${instance_ip} ansible_host=${instance_ip} ansible_connection=ssh ansible_port=22 ansible_user=ubuntu ansible_ssh_private_key_file=private_key.pem" >> inventory.ini
           echo "" >> inventory.ini
