@@ -6,23 +6,6 @@ variable "region" {
   default="us-west-1"
 }
 
-variable "bucket" {
-  description = "Name of the S3 bucket"
-  type = string
-  default = "isc-anasty-state"
-}
-
-variable "Key_terraform_state" {
-  description = "Name of the key"
-  type = string
-  default = "terraform.tfstate"
-}
-
-variable "dynamodb_table" {
-  description = "Name of the DynamoDB table"
-  type = string
-  default = "anasty-lock-table"
-}
 
 // Key pair name AWS EC2
 variable "key_name"{

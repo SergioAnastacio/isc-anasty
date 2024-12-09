@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = var.bucket
-    key            = var.Key_terraform_state
+    bucket         = "isc-anasty-state"
+    key            = "terraform.tfstate"
     region         = "us-west-1"  
-    dynamodb_table = var.dynamodb_table
+    dynamodb_table = "anasty-lock-table"
   }
 }
 
