@@ -47,6 +47,7 @@ resource "aws_instance" "back_anasty" {
   instance_type = var.ec2.instance_type
   vpc_security_group_ids = [aws_security_group.anasty_security_group.id]
   key_name               = var.key_name
+  subnet_id              = aws_subnet.anasty_subnet.id
 }
 resource "aws_eip" "back_anasty_eip" {
   instance = aws_instance.back_anasty.id
