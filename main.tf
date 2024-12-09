@@ -1,14 +1,14 @@
 terraform {
   backend "s3" {
-    bucket         = "isc-anasty-state"
-    key            = "terraform.tfstate"
-    region         = var.region.region
-    dynamodb_table = "anasty-lock-table"
+    bucket         = var.bucket
+    key            = var.Key_terraform_state
+    region         = "us-west-1"  
+    dynamodb_table = var.dynamodb_table
   }
 }
 
 provider "aws" {
-  region = var.region.region
+  region = var.region
 }
 
 resource "aws_vpc" "anasty_vpc" {

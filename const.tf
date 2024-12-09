@@ -1,19 +1,50 @@
-//archivo de variables
+//Config variables
+
 variable "region" {
   description = "AWS region"
-  type = object({
-    region = string
-  })
-  default = {
-    region = "us-west-1"
-  }
+  type = string
+  default="us-west-1"
 }
 
+variable "bucket" {
+  description = "Name of the S3 bucket"
+  type = string
+  default = "isc-anasty-state"
+}
+
+variable "Key_terraform_state" {
+  description = "Name of the key"
+  type = string
+  default = "terraform.tfstate"
+}
+
+variable "dynamodb_table" {
+  description = "Name of the DynamoDB table"
+  type = string
+  default = "anasty-lock-table"
+}
+
+// Key pair name AWS EC2
 variable "key_name"{
   description = "value of the key"
   type = string
-  default = "keymaster"
+  default = "masternode"
 }
+
+variable "ec2" {
+  description = "EC2 instance configuration"
+  type = object({
+    ami           = string
+    instance_type = string
+  })
+  default = {
+    // Ubuntu 20.04 LTS
+    ami           = "ami-0c55b159cbfafe1f0"
+    instance_type = "t2.micro"
+  }
+}
+
+//Config variables
 
 variable "vpc" {
   description = "VPC configuration"
@@ -80,17 +111,5 @@ variable "security_group_rule" {
     to_port           = 3000
     protocol          = "tcp"
     cidr_blocks       = ["0.0.0.0/0"]
-  }
-}
-
-variable "ec2" {
-  description = "EC2 instance configuration"
-  type = object({
-    ami           = string
-    instance_type = string
-  })
-  default = {
-    ami           = "ami-0c55b159cbfafe1f0"
-    instance_type = "t2.micro"
   }
 }

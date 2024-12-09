@@ -14,15 +14,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.0.0
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -35,13 +35,19 @@ jobs:
         id: apply
         run: terraform apply -refresh-only -auto-approve
 
-      - name: Save instance IP to file
+      - name: Create Ansible Inventory File
+        id: inventory
         run: |
-          echo $(terraform output -raw instance_ip) > instance_ip.txt
+          echo "[api]" > inventory.ini
+          echo $(terraform output -raw instance_ip) >> inventory.ini
+          echo "[web:vars]">> inventory.ini
+          echo "ansible_user=ubuntu" >> inventory.ini
+          echo "ansible_ssh_privatekey_file=private_key.pem" >> inventory.ini
+          echo "ansible_interpreter=/usr/bin/python3" >> inventory.ini
 
-      - name: Upload instance IP to S3
+      - name: Upload Ansible inventory to S3
         run: |
-          aws s3 cp instance_ip.txt s3://anastacio/instance_ip.txt
+          aws s3 cp instance_ip.txt s3://anastacio/inventory.ini
 
   ansible:
     runs-on: ubuntu-latest
@@ -49,10 +55,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -60,16 +66,16 @@ jobs:
 
       - name: Download instance IP from S3
         run: |
-          aws s3 cp s3://anastacio/instance_ip.txt instance_ip.txt
+          aws s3 cp s3://anastacio/inventory.ini inventory.ini
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      - name: Use private key from secrets
+      - name: Decode and use private key from secrets
         run: |
-          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > private_key.pem
+          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
 
-      - name: Run Ansible Playbook
+      - name: Run Ansible Playbook 
         run: |
-          ansible-playbook -i instance_ip.txt, playbook.yml --private-key private_key.pem
+          ansible-playbook -i inventory.ini playbook.yml
