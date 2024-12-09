@@ -15,6 +15,11 @@ resource "aws_vpc" "anasty_vpc" {
   cidr_block = var.vpc.cidr_block
 }
 
+resource "aws_internet_gateway" "anasty_gateway" {
+  vpc_id = aws_vpc.anasty_vpc.id
+  
+}
+
 resource "aws_subnet" "anasty_subnet" {
   vpc_id     = aws_vpc.anasty_vpc.id
   cidr_block = var.subnet.cidr_block
