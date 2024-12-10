@@ -7,6 +7,8 @@
     - name: Update and upgrade apt packages
       apt:
         upgrade: dist
+        update_cache: yes
+        cache_valid_time: 0
       register: apt_update
       failed_when: apt_update is failed
       ignore_errors: yes
@@ -23,30 +25,40 @@
           - curl
           - software-properties-common
         state: present
+        update_cache: yes
+        cache_valid_time: 0
 
     - name: Add Docker GPG key
-      run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
 
     - name: Add Docker repository
-      run: sudo add-apt-repository "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
+        state: present
 
     - name: Update apt packages
-      run: sudo apt-get update
+      apt:
+        update_cache: yes
+        cache_valid_time: 0
 
     - name: Install Docker
-      run: sudo apt install -y docker-ce docker-ce-cli containerd.io
-    
-    - name: enable Docker
-      run: sudo systemctl enable docker
-    
-    - name: enable containerd
-      run: sudo systemctl enable containerd
-    
-    - name: verify installation
-      run: sudo systemctl status docker
-    
-    - name: Add user to Docker group
-      run: sudo usermod -aG docker $USER
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
 
-    - name: Restart terminal to apply changes
-      run: newgrp docker
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to Docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
