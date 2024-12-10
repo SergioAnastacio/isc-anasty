@@ -54,33 +54,27 @@ resource "aws_route_table_association" "anasty_table_association_ipv6" {
 
 resource "aws_security_group" "anasty_security_group" {
   vpc_id = aws_vpc.anasty_vpc.id
-}
 
-resource "aws_security_group_rule" "allow_ssh" {
-  security_group_id = aws_security_group.anasty_security_group.id
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-resource "aws_security_group_rule" "allow_http" {
-  security_group_id = aws_security_group.anasty_security_group.id
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-resource "aws_security_group_rule" "allow_https" {
-  security_group_id = aws_security_group.anasty_security_group.id
-  type              = "ingress"
-  from_port         = 443
-  to_port           = 443
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_instance" "back_anasty" {
@@ -89,6 +83,7 @@ resource "aws_instance" "back_anasty" {
   vpc_security_group_ids = [aws_security_group.anasty_security_group.id]
   key_name               = "masternode"
   subnet_id              = aws_subnet.anasty_subnet.id
+  associate_public_ip_address = true
 }
 
 resource "aws_eip" "back_anasty_eip" {
