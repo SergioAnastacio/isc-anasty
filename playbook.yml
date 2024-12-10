@@ -46,6 +46,12 @@
         groups: docker
         append: yes
 
+    - name: Open port 22 for SSH
+      ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+
     - name: Check current Docker image version
       command: docker images nginx --format "{{.Tag}}"
       register: current_docker_version
