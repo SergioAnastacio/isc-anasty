@@ -42,12 +42,6 @@ resource "aws_route" "default_route" {
   gateway_id             = aws_internet_gateway.anasty_gateway.id
 }
 
-resource "aws_route" "local_route" {
-  route_table_id         = aws_route_table.anasty_route_table.id
-  destination_cidr_block = "172.30.0.0/16"
-  gateway_id             = "local"
-}
-
 resource "aws_route_table_association" "anasty_table_association" {
   subnet_id      = aws_subnet.anasty_subnet.id
   route_table_id = aws_route_table.anasty_route_table.id
