@@ -13,19 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: apt-get jq
-        run: sudo apt-get install jq -y
-
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.0.0
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -34,18 +31,20 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Apply(Refresh Only)
+      - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve
-
-      - name: Debug Terraform Output
-        run: terraform output
 
       - name: Create Ansible Inventory File
         id: inventory
         run: |
-          instance_ip=$(cat instance_ip.txt)
-          echo "api ansible_host=${instance_ip} ansible_connection=ssh ansible_port=22 ansible_user=ubuntu ansible_ssh_private_key_file=private_key.pem" >> inventory.ini
+          instance_ip=$(terraform output -raw instance_ip)
+          echo "[api]" > inventory.ini
+          echo "${instance_ip} ansible_host=${instance_ip} ansible_connection=ssh ansible_port=22 ansible_user=ubuntu ansible_ssh_private_key_file=private_key.pem" >> inventory.ini
+          echo "" >> inventory.ini
+          echo "[api:vars]" >> inventory.ini
+          echo "ansible_python_interpreter=/usr/bin/python3" >> inventory.ini
+          echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
 
       - name: Upload Ansible inventory to S3
         run: |
@@ -57,33 +56,27 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-1
 
-      - name: Download instance IP from S3
+      - name: Download inventory file from S3
         run: |
           aws s3 cp s3://anastacio/inventory.ini inventory.ini
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
       - name: Decode and use private key from secrets
         run: |
           echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" | base64 --decode > private_key.pem
           chmod 600 private_key.pem
 
-      - name: Verify inventory file
-        run: cat inventory.ini
-      
-      - name: Run Ansible Playbook 
+      - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i inventory.ini playbook.yml --
+          ansible-playbook -i inventory.ini playbook.yml --private-key private_key.pem
