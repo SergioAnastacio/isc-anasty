@@ -2,35 +2,59 @@ terraform {
   backend "s3" {
     bucket         = "isc-anasty-state"
     key            = "terraform.tfstate"
-    region         = "us-west-1"  
+    region         = "us-west-1"
     dynamodb_table = "anasty-lock-table"
   }
 }
 
 provider "aws" {
-  region = var.region
+  region = "us-west-1"
 }
 
 resource "aws_vpc" "anasty_vpc" {
-  cidr_block = var.vpc.cidr_block
+  cidr_block = "172.30.0.0/16"
+  assign_generated_ipv6_cidr_block = true
 }
 
 resource "aws_internet_gateway" "anasty_gateway" {
   vpc_id = aws_vpc.anasty_vpc.id
-  
 }
 
 resource "aws_subnet" "anasty_subnet" {
   vpc_id     = aws_vpc.anasty_vpc.id
-  cidr_block = var.subnet.cidr_block
+  cidr_block = "172.30.0.0/24"
+}
+
+resource "aws_subnet" "anasty_subnet_ipv6" {
+  vpc_id            = aws_vpc.anasty_vpc.id
+  cidr_block        = "172.30.1.0/24"
+  availability_zone = "us-west-1c"
+  ipv6_cidr_block   = cidrsubnet(aws_vpc.anasty_vpc.ipv6_cidr_block, 8, 1)
 }
 
 resource "aws_route_table" "anasty_route_table" {
   vpc_id = aws_vpc.anasty_vpc.id
 }
 
+resource "aws_route" "default_route" {
+  route_table_id         = aws_route_table.anasty_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.anasty_gateway.id
+}
+
+resource "aws_route" "local_route" {
+  route_table_id         = aws_route_table.anasty_route_table.id
+  destination_cidr_block = "172.30.0.0/16"
+  gateway_id             = "local"
+}
+
 resource "aws_route_table_association" "anasty_table_association" {
   subnet_id      = aws_subnet.anasty_subnet.id
+  route_table_id = aws_route_table.anasty_route_table.id
+}
+
+resource "aws_route_table_association" "anasty_table_association_ipv6" {
+  subnet_id      = aws_subnet.anasty_subnet_ipv6.id
   route_table_id = aws_route_table.anasty_route_table.id
 }
 
@@ -48,10 +72,10 @@ resource "aws_security_group_rule" "allow_ssh" {
 }
 
 resource "aws_instance" "back_anasty" {
-  ami                    = var.ec2.ami
-  instance_type          = var.ec2.instance_type
+  ami                    = "ami-0657605d763ac72a8"
+  instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.anasty_security_group.id]
-  key_name               = var.key_name
+  key_name               = "masternode"
   subnet_id              = aws_subnet.anasty_subnet.id
 }
 
@@ -60,11 +84,5 @@ resource "aws_eip" "back_anasty_eip" {
 }
 
 output "instance_ip" {
-  value     = aws_eip.back_anasty_eip.public_ip
-  sensitive = false
-}
-
-resource "local_file" "instance_ip_file" {
-  content  = aws_eip.back_anasty_eip.public_ip
-  filename = "${path.module}/instance_ip.txt"
+  value = aws_eip.back_anasty_eip.public_ip
 }

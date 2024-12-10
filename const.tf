@@ -35,7 +35,7 @@ variable "vpc" {
     cidr_block = string
   })
   default = {
-    cidr_block = "10.0.0.0/16"
+    cidr_block = "172.30.0.0/16"
   }
 }
 
@@ -45,9 +45,23 @@ variable "subnet" {
     cidr_block = string
   })
   default = {
-    cidr_block = "10.0.1.0/24"
+    cidr_block = "172.30.0.0/24"
+    availability_zone = "us-west-1b"
   }
 }
+
+variable "subnet_ipv6" {
+  description = "IPv6 Subnet configuration"
+  type = object({
+    cidr_block = string
+    availability_zone = string
+  })
+  default = {
+    cidr_block = "172.30.1.0/24"
+    availability_zone = "us-west-1c"
+  }
+}
+
 variable "route_table" {
   description = "Route table configuration"
   type = object({
