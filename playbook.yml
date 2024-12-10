@@ -8,6 +8,13 @@
       apt:
         update_cache: yes
         upgrade: dist
+      register: apt_update
+      failed_when: apt_update is failed
+      ignore_errors: yes
+
+    - name: Debug apt update
+      debug:
+        var: apt_update
 
     - name: Install required packages
       apt:
@@ -51,39 +58,3 @@
         rule: allow
         port: 22
         proto: tcp
-
-    - name: Check current Docker image version
-      command: docker images nginx --format "{{.Tag}}"
-      register: current_docker_version
-      ignore_errors: yes
-
-    - name: Pull latest Docker image
-      docker_image:
-        name: nginx
-        source: pull
-      register: new_docker_image
-
-    - name: Compare Docker image versions
-      set_fact:
-        docker_version_changed: "{{ current_docker_version.stdout != new_docker_image.image.Tag }}"
-
-    - name: Stop Docker container if image version changed
-      docker_container:
-        name: nginx
-        state: stopped
-      when: docker_version_changed
-
-    - name: Remove Docker container if image version changed
-      docker_container:
-        name: nginx
-        state: absent
-      when: docker_version_changed
-
-    - name: Run Docker container with new image
-      docker_container:
-        name: nginx
-        image: nginx
-        state: started
-        ports:
-          - "80:80"
-      when: docker_version_changed
