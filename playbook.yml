@@ -4,19 +4,6 @@
   become: yes
 
   tasks:
-    - name: Update and upgrade apt packages
-      apt:
-        upgrade: dist
-        update_cache: yes
-        cache_valid_time: 0
-      register: apt_update
-      failed_when: apt_update is failed
-      ignore_errors: yes
-
-    - name: Debug apt update
-      debug:
-        var: apt_update
-
     - name: Install required packages
       apt:
         name: 
@@ -35,7 +22,7 @@
 
     - name: Add Docker repository
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
         state: present
 
     - name: Update apt packages
