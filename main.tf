@@ -38,8 +38,8 @@ resource "aws_security_group" "anasty_security_group" {
   vpc_id = aws_vpc.anasty_vpc.id
 }
 
-resource "aws_security_group_rule" "anasty_vpc_sg_rule" {
- security_group_id = aws_security_group.anasty_security_group.id
+resource "aws_security_group_rule" "allow_ssh" {
+  security_group_id = aws_security_group.anasty_security_group.id
   type              = "ingress"
   from_port         = 22
   to_port           = 22
@@ -47,29 +47,20 @@ resource "aws_security_group_rule" "anasty_vpc_sg_rule" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-// Removed duplicate rule
-// resource "aws_security_group_rule" "allow_ssh" {
-//   security_group_id = aws_security_group.anasty_security_group.id
-//   type              = "ingress"
-//   from_port         = 22
-//   to_port           = 22
-//   protocol          = "tcp"
-//   cidr_blocks       = ["0.0.0.0/0"]
-// }
-
 resource "aws_instance" "back_anasty" {
-  ami           = var.ec2.ami
-  instance_type = var.ec2.instance_type
+  ami                    = var.ec2.ami
+  instance_type          = var.ec2.instance_type
   vpc_security_group_ids = [aws_security_group.anasty_security_group.id]
   key_name               = var.key_name
   subnet_id              = aws_subnet.anasty_subnet.id
 }
+
 resource "aws_eip" "back_anasty_eip" {
   instance = aws_instance.back_anasty.id
 }
 
 output "instance_ip" {
-  value = aws_eip.back_anasty_eip.public_ip
+  value     = aws_eip.back_anasty_eip.public_ip
   sensitive = false
 }
 
