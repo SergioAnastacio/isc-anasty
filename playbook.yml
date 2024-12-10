@@ -6,7 +6,6 @@
   tasks:
     - name: Update and upgrade apt packages
       apt:
-        update_cache: yes
         upgrade: dist
       register: apt_update
       failed_when: apt_update is failed
@@ -26,35 +25,28 @@
         state: present
 
     - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+      run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 
     - name: Add Docker repository
-      apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu focal stable
-        state: present
+      run: sudo add-apt-repository "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+    - name: Update apt packages
+      run: sudo apt-get update
 
     - name: Install Docker
-      apt:
-        name: docker-ce
-        state: present
-        update_cache: yes
-
-    - name: Start and enable Docker service
-      systemd:
-        name: docker
-        state: started
-        enabled: yes
-
+      run: sudo apt install -y docker-ce docker-ce-cli containerd.io
+    
+    - name: enable Docker
+      run: sudo systemctl enable docker
+    
+    - name: enable containerd
+      run: sudo systemctl enable containerd
+    
+    - name: verify installation
+      run: sudo systemctl status docker
+    
     - name: Add user to Docker group
-      user:
-        name: ubuntu
-        groups: docker
-        append: yes
+      run: sudo usermod -aG docker $USER
 
-    - name: Open port 22 for SSH
-      ufw:
-        rule: allow
-        port: 22
-        proto: tcp
+    - name: Restart terminal to apply changes
+      run: newgrp docker
